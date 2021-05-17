@@ -129,7 +129,7 @@ function multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQ
 }
 
 // Function to multiply two matrices matrixA[][] and matrixB[][] recursively
-function multiplyMatrixRecursive( storage)
+function multiplyMatrixRecursive( rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, storage)
 {
     storage.counterRecursive += 1 + (storage.matrixA.length ** 2) * 2;
     let C = Array(storage.matrixA.length).fill(0).map(()=>Array(storage.matrixB[0].length).fill(0));
@@ -186,7 +186,7 @@ async function main() {
     console.log(counter);
 
     myStorage = await multiplyMatricesNormal(myStorage, myStorage.matrixA, myStorage.matrixB);
-    multiplyMatrixRecursive(myStorage);
+    multiplyMatrixRecursive(myStorage.matrixA.length, myStorage.matrixA[0].length, myStorage.matrixA, myStorage.matrixB.length, myStorage.matrixB[0].length, myStorage.matrixB, myStorage);
     
     // Printing analysis:
     console.log("Iterative function operations counter: " + myStorage.counterNormal + " actions.");
