@@ -25,7 +25,7 @@ function createMatrixA(matrixSize) {
 
                 // Commented line is for testing where are indexes of matrix elements for modification of matrix.
                 // process.stdout.write("" + i + j + ", ");
-                process.stdout.write(resultMatrixA[i][j] + ",\t");
+                process.stdout.write(resultMatrixA[i][j] + ", ");
             }
             console.log(" ");
         }
@@ -37,9 +37,9 @@ function createMatrixA(matrixSize) {
 // Function that gets number value of matrix size and returns a promise with matrix matrixB.
 function createMatrixB(matrixSize){
     return new Promise(function(resolve, reject){
-
+        
         let resultMatrixB = Array(matrixSize).fill(0).map(()=>Array(matrixSize).fill(0));
-        console.log("Matrix matrixB:");
+        console.log("Matrix B:");
 
         for (let i = 0; i < matrixSize; i++) {
             for (let j = 0; j < matrixSize; j++) {
@@ -60,8 +60,10 @@ function createMatrixB(matrixSize){
 
 // Gets a storage, with matrixA and matrixB as arguments, outputs a storage with result matrix and counters inside
 function multiplyMatricesNormal(storage){
-    let resultMatrix = [];
+    storage.counterNormal++;
 
+    let resultMatrix = [];
+    
     console.log("Result matrix Y:")
 
 
@@ -90,52 +92,57 @@ function multiplyMatricesNormal(storage){
 
 let i = 0, j = 0, columnIndexMatrixA = 0;
 
-function multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB,colQuantityMatrixB , matrixB, C)
+function multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB,colQuantityMatrixB , matrixB, C, storage)
 {
     // ### Base "stop recursive calls" cases ###
 
     // If all rows traversed
     if (i >= rowQuantityMatrixA)
+        storage.counterRecursive++;
         return;
 
     // ### Recursive calls with different index changes ###
-
+    
     // If i < rowQuantityMatrixA
     if (j < colQuantityMatrixB)
     {
+        storage.counterRecursive++;
         if (columnIndexMatrixA < colQuantityMatrixA)
         {
+            storage.counterRecursive += 4;
             C[i][j] += matrixA[i][columnIndexMatrixA] * matrixB[columnIndexMatrixA][j];
             columnIndexMatrixA++;
 
-            multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C);
+            multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
         }
         // Next column
+        storage.counterRecursive += 3;
         columnIndexMatrixA = 0;
         j++;
-        multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C);
+        multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
     }
     // Next row
+    storage.counterRecursive += 3;
     j = 0;
     i++;
-    multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C);
+    multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
 }
 
-// Function to multiply two matrices matrixA[][] and matrixB[][]
-function multiplyMatrix(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB, colQuantityMatrixB, storage)
+// Function to multiply two matrices matrixA[][] and matrixB[][] recursively
+function multiplyMatrixRecursive( storage)
 {
+    storage.counterRecursive += 1 + (storage.matrixA.length ** 2) * 2;
+    let C = Array(storage.matrixA.length).fill(0).map(()=>Array(storage.matrixB[0].length).fill(0));
 
-    let C = Array(rowQuantityMatrixA).fill(0).map(()=>Array(rowQuantityMatrixB).fill(0));
-
-    multiplyMatricesRecursive(storage.matrixA.length, storage.matrixA.length, storage.matrixA, storage.matrixB.length, storage.matrixB.length, storage.matrixB, C);
+    storage.counterRecursive += 1;
+    multiplyMatrixRec(storage.matrixA.length, storage.matrixA[0].length, storage.matrixA, storage.matrixB.length, storage.matrixB[0].length, storage.matrixB, storage);
     console.log("Result matrix Y recursively:");
-
-
+    
     for (let i = 0; i < storage.matrixA.length; i++) {
         for (let j = 0; j < storage.matrixB[0].length; j++) {
 
             process.stdout.write(C[i][j] + ",\t");
-            storage.counterNormal++;
+            storage.counterRecursive++;
         }
         console.log(" ");
     }
@@ -179,7 +186,11 @@ async function main() {
     console.log(counter);
 
     myStorage = await multiplyMatricesNormal(myStorage, myStorage.matrixA, myStorage.matrixB);
-    multiplyMatrix(myStorage.matrixA.length, myStorage.matrixA.length, myStorage.matrixB.length, myStorage.matrixB.length, myStorage);
+    multiplyMatrixRecursive(myStorage);
+    
+    // Printing analysis:
+    console.log("Iterative function operations counter: " + myStorage.counterNormal + " actions.");
+    console.log("Recursive function operations counter: " + myStorage.counterRecursive + " actions.");
 
 }
 main()
