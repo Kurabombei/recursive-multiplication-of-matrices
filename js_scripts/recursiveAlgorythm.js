@@ -25,7 +25,7 @@ function createMatrixA(matrixSize) {
 
                 // Commented line is for testing where are indexes of matrix elements for modification of matrix.
                 // process.stdout.write("" + i + j + ", ");
-                process.stdout.write(resultMatrixA[i][j] + ", ");
+                process.stdout.write(resultMatrixA[i][j] + ",  ");
             }
             console.log(" ");
         }
@@ -37,9 +37,9 @@ function createMatrixA(matrixSize) {
 // Function that gets number value of matrix size and returns a promise with matrix matrixB.
 function createMatrixB(matrixSize){
     return new Promise(function(resolve, reject){
-        
+
         let resultMatrixB = Array(matrixSize).fill(0).map(()=>Array(matrixSize).fill(0));
-        console.log("Matrix B:");
+        console.log("Matrix matrixB:");
 
         for (let i = 0; i < matrixSize; i++) {
             for (let j = 0; j < matrixSize; j++) {
@@ -61,10 +61,10 @@ function createMatrixB(matrixSize){
 // Gets a storage, with matrixA and matrixB as arguments, outputs a storage with result matrix and counters inside
 function multiplyMatricesNormal(storage){
     storage.counterNormal++;
-
     let resultMatrix = [];
-    
-    console.log("Result matrix Y:")
+    let timeStart = process.hrtime();
+
+    console.log("Result matrix Y:");
 
 
     for (let i = 0; i < storage.matrixA.length; i++) {
@@ -86,58 +86,77 @@ function multiplyMatricesNormal(storage){
         }
         console.log(" ");
     }
+    let timeEnd = process.hrtime(timeStart);
+    storage.timeIterative = timeEnd;
+
+
+    storage.counterNormal++;
     storage.resultMatrixY = resultMatrix;
+
+
     return storage;
 }
 
 let i = 0, j = 0, columnIndexMatrixA = 0;
 
-function multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB,colQuantityMatrixB , matrixB, C, storage)
+// call stack problem with size > 100, process.nextTick() and setTimeout() didnt help as expected
+function multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB,colQuantityMatrixB, C, storage)
 {
     // ### Base "stop recursive calls" cases ###
 
     // If all rows traversed
     if (i >= rowQuantityMatrixA)
-        storage.counterRecursive++;
         return;
 
     // ### Recursive calls with different index changes ###
-    
-    // If i < rowQuantityMatrixA
-    if (j < colQuantityMatrixB)
-    {
-        storage.counterRecursive++;
-        if (columnIndexMatrixA < colQuantityMatrixA)
-        {
-            storage.counterRecursive += 4;
-            C[i][j] += matrixA[i][columnIndexMatrixA] * matrixB[columnIndexMatrixA][j];
-            columnIndexMatrixA++;
 
-            multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
+    // If i < rowQuantityMatrixA
+    if (j < colQuantityMatrixB) {
+        storage.counterRecursive++;
+        if (columnIndexMatrixA < colQuantityMatrixA) {
+
+            // RECURSION HERE CAUSED NODE JS MAXIMUM CALL STACK ERROR, changed calculating element to a cycle for possible calculation with matrixSize > 20
+
+            // storage.counterRecursive++;
+            // C[i][j] += storage.matrixA[i][columnIndexMatrixA] * storage.matrixB[columnIndexMatrixA][j];
+            // columnIndexMatrixA++;
+            // return multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB, colQuantityMatrixB, C, storage);
+
+            for(columnIndexMatrixA; columnIndexMatrixA < colQuantityMatrixA; columnIndexMatrixA++){
+                storage.counterRecursive++;
+                C[i][j] += storage.matrixA[i][columnIndexMatrixA] * storage.matrixB[columnIndexMatrixA][j];
+            }
+
         }
         // Next column
-        storage.counterRecursive += 3;
+        storage.counterRecursive++;
         columnIndexMatrixA = 0;
         j++;
-        multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
+        return multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB, colQuantityMatrixB, C, storage);
     }
     // Next row
-    storage.counterRecursive += 3;
+    storage.counterRecursive += 2;
     j = 0;
     i++;
-    multiplyMatrixRec(rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, C, storage);
+
+    return multiplyMatricesRecursive(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB, colQuantityMatrixB, C, storage);
 }
 
-// Function to multiply two matrices matrixA[][] and matrixB[][] recursively
-function multiplyMatrixRecursive( rowQuantityMatrixA, colQuantityMatrixA, matrixA, rowQuantityMatrixB, colQuantityMatrixB, matrixB, storage)
+// Function to multiply two matrices matrixA[][] and matrixB[][]
+function multiplyMatrixWrapper(rowQuantityMatrixA, colQuantityMatrixA, rowQuantityMatrixB, colQuantityMatrixB, storage)
 {
-    storage.counterRecursive += 1 + (storage.matrixA.length ** 2) * 2;
-    let C = Array(storage.matrixA.length).fill(0).map(()=>Array(storage.matrixB[0].length).fill(0));
 
-    storage.counterRecursive += 1;
-    multiplyMatrixRec(storage.matrixA.length, storage.matrixA[0].length, storage.matrixA, storage.matrixB.length, storage.matrixB[0].length, storage.matrixB, storage);
+    storage.counterRecursive += 1 + (storage.matrixA.length ** 2) * 2;
+    let C = Array(storage.matrixA.length).fill(0).map(()=>Array(storage.matrixA.length).fill(0));
+
+    let timeStart = process.hrtime();
+    multiplyMatricesRecursive(storage.matrixA.length, storage.matrixA.length, storage.matrixB.length, storage.matrixB.length, C, storage);
+    let timeEnd = process.hrtime(timeStart);
+    storage.timeRecursive = timeEnd;
+    storage.counterRecursive++;
     console.log("Result matrix Y recursively:");
-    
+
+
     for (let i = 0; i < storage.matrixA.length; i++) {
         for (let j = 0; j < storage.matrixB[0].length; j++) {
 
@@ -146,12 +165,12 @@ function multiplyMatrixRecursive( rowQuantityMatrixA, colQuantityMatrixA, matrix
         }
         console.log(" ");
     }
+    return storage;
 }
 
 // Main function, all executions start here, and all matrices are saved in locally made object "myStorage"
 async function main() {
 
-    let counter = 0;
 
     let myStorage = {
         matrixSize: 1,
@@ -160,7 +179,9 @@ async function main() {
         resultMatrixY: [[]],
         resultMatrixYRecursive: [[]],
         counterNormal: 0,
-        counterRecursive: 0
+        counterRecursive: 0,
+        timeIterative: 0,
+        timeRecursive: 0
     };
 
 
@@ -183,15 +204,16 @@ async function main() {
             error => console.log(error)
         );
     });
-    console.log(counter);
 
     myStorage = await multiplyMatricesNormal(myStorage, myStorage.matrixA, myStorage.matrixB);
-    multiplyMatrixRecursive(myStorage.matrixA.length, myStorage.matrixA[0].length, myStorage.matrixA, myStorage.matrixB.length, myStorage.matrixB[0].length, myStorage.matrixB, myStorage);
-    
+    multiplyMatrixWrapper(myStorage.matrixA.length, myStorage.matrixA.length, myStorage.matrixB.length, myStorage.matrixB.length, myStorage);
+
     // Printing analysis:
     console.log("Iterative function operations counter: " + myStorage.counterNormal + " actions.");
     console.log("Recursive function operations counter: " + myStorage.counterRecursive + " actions.");
-
+    console.log("Iterative function execution time: " + myStorage.timeIterative[0] + " s and " + myStorage.timeIterative[1]/1000000 + "ms.");
+    console.log("Recursive function execution time: " + myStorage.timeRecursive[0] + " s and " + myStorage.timeRecursive[1]/1000000 + "ms.");
 }
+
 main()
 
